@@ -33,6 +33,6 @@ export const actions: Actions = {
       sameSite: "lax",
       maxAge
     });
-    throw redirect(303, "/");
+    throw redirect(303, "/dashboard");
   }
 };

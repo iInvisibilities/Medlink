@@ -42,6 +42,7 @@
 		"lucia": "^3.2.2",
 		"mode-watcher": "^1.1.0",
 		"mongodb": "^6.21.0",
-		"oslo": "^1.2.1"
+		"oslo": "^1.2.1",
+		"rate-limiter-flexible": "^9.0.0"
 	}
 }

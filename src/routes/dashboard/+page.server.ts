@@ -12,6 +12,13 @@ export const load: ServerLoad = async ({ locals }) => {
   const clinicId = (await db.collection<any>("users").findOne({ _id: session.user.id }))?.clinic_id;
   if (clinicId) {
     appointments = await db.collection<any>("appointments").find({ doctor_id: clinicId }).sort({ date: -1 }).toArray();
+    appointments.map((appt) => {
+      appt.user_name = "";
+      db.collection<any>("users").findOne({ _id: appt.user_id }).then((user) => {
+        if (user) appt.user_name = user.name;
+      });
+      return appt;
+    });
   } else {
     const data = await getUserData(session.user.id);
     appointments = data.appointments;
