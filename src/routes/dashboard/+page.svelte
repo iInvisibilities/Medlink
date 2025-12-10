@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "$lib/components/ui/card/index.js";
   import { Button } from "$lib/components/ui/button/index.js";
   import { Label } from "$lib/components/ui/label/index.js";
@@ -6,18 +7,24 @@
   import { Alert, AlertTitle, AlertDescription } from "$lib/components/ui/alert/index.js";
   import { Drawer } from "$lib/components/ui/drawer/index.js";
   import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from "$lib/components/ui/table/index.js";
-	import { onMount } from "svelte";
+
   let { data, form } = $props();
   let drawerOpen = $state(false);
   let selectedClinicId = $state<string>("");
   let selectedClinicName = $state<string>("");
+  let appointments = $state<any[]>([]);
+
   $effect(() => { if ((form as any)?.results) drawerOpen = true; });
   $effect(() => {
     if ((form as any)?.doctor?.id) {
-    selectedClinicId = (form as any).doctor.id;
-    selectedClinicName = (form as any).doctor.name;
+      selectedClinicId = (form as any).doctor.id;
+      selectedClinicName = (form as any).doctor.name;
     }
   });
+  $effect(() => {
+    appointments = (data as any)?.appointments || [];
+  });
+
   function onCloseDrawer() { drawerOpen = false; }
   function nextAfterSelect() { drawerOpen = false; }
   function formatDateForInput(iso: string) {
@@ -26,6 +33,17 @@
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }
+
+  onMount(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent)?.detail;
+      if (detail && Array.isArray(detail.appointments)) {
+        appointments = detail.appointments;
+      }
+    };
+    window.addEventListener("dashboard:appointments:update", handler as EventListener);
+    return () => window.removeEventListener("dashboard:appointments:update", handler as EventListener);
+  });
 </script>
 
 <section class="mx-auto max-w-7xl px-6 py-10">
@@ -52,20 +70,23 @@
 
   <div class="grid gap-6 lg:grid-cols-3">
     <!-- Appointments -->
-    <Card class="lg:col-span-2">
+    <Card class="lg:col-span-2 border-none">
       <CardHeader>
         <CardTitle>{(data as any).user?.clinic ? (data as any)?.content?.dashboard?.clinicAppointments || "Clinic Appointments" : (data as any)?.content?.dashboard?.currentAppointments || "Current Appointments"}</CardTitle>
         <CardDescription>{(data as any).user?.clinic ? (data as any)?.content?.dashboard?.clinicAppointmentsDesc || "Appointments linked to your clinic." : (data as any)?.content?.dashboard?.appointmentsDesc || "Your upcoming and past bookings."}</CardDescription>
       </CardHeader>
       <CardContent>
-        {#if (data as any).appointments.length === 0}
+        {#if appointments.length === 0}
           <p class="text-sm text-muted-foreground">{(data as any)?.content?.dashboard?.noAppointments || "No appointments yet."}</p>
         {:else}
           {#if (data as any).user?.clinic}
             <div class="space-y-4">
-              {#each (data as any).appointments as appt}
-                <div class="rounded-lg border bg-card p-3">
+              {#each appointments as appt}
+                <div class="rounded-lg bg-accent-foreground/5 p-3">
                   <div class="mb-1 text-sm font-medium">{appt.user_name} • {new Date(appt.date).toLocaleString()}</div>
+                  {#if appt.user_phone}
+                    <div class="text-xs text-muted-foreground">{(data as any)?.content?.dashboard?.phoneLabel || "Phone"}: {appt.user_phone}</div>
+                  {/if}
                   <div class="mb-2 text-xs text-muted-foreground">{(data as any)?.content?.dashboard?.notes || "Notes"}: {appt.notes || "—"}</div>
                   <div class="flex flex-wrap items-center gap-2">
                     <form method="POST" action="?/updateAppointment" class="flex items-center gap-2">
@@ -85,12 +106,16 @@
             </div>
           {:else}
             <div class="space-y-3">
-              {#each (data as any).appointments as appt}
+              {#each appointments as appt}
                 <div class="flex items-center justify-between rounded-lg border bg-card p-3">
                   <div>
                     <div class="font-medium">{appt.doctor_name} • {appt.specialty}</div>
                     <div class="text-xs text-muted-foreground">{new Date(appt.date).toLocaleString()} • {(data as any)?.content?.dashboard?.notes || "Notes"}: {appt.notes}</div>
                   </div>
+                  <form method="POST" action="?/cancelAppointment" class="flex items-center" onsubmit={(e: SubmitEvent) => { if (!confirm((data as any)?.content?.dashboard?.deleteConfirm || 'Delete this appointment?')) e.preventDefault(); }}>
+                    <input type="hidden" name="id" value={appt._id} />
+                    <Button type="submit" variant="destructive" size="sm">{(data as any)?.content?.dashboard?.deleteButton || "Delete"}</Button>
+                  </form>
                 </div>
               {/each}
             </div>
@@ -101,7 +126,7 @@
 
     <!-- Right column: booking or management -->
     {#if !(data as any).user?.clinic}
-    <Card>
+    <Card class="border-none">
       <CardHeader>
         <CardTitle>{(data as any)?.content?.dashboard?.findClinicTitle || "Find a Clinic"}</CardTitle>
         <CardDescription>{(data as any)?.content?.dashboard?.findClinicDescription || "Search clinics, pick one, then choose a time."}</CardDescription>
@@ -110,7 +135,7 @@
         <CardContent class="space-y-3">
           <div class="grid gap-3 sm:grid-cols-3">
             <div class="space-y-2">
-              <Label for="q">{(data as any)?.content?.dashboard?.searchClinicNameLabel || "Name"}</Label>
+              <Label for="q">{(data as any)?.content?.dashboard?.searchClinicNameLabel || "Clinic or doctor name"}</Label>
               <Input id="q" name="q" placeholder={(data as any)?.content?.dashboard?.searchClinicNamePlaceholder || "Clinic or doctor name"} class="h-10" />
             </div>
             <div class="space-y-2">
@@ -184,7 +209,7 @@
       {/if}
     </Card>
     {:else}
-    <Card class="hidden lg:block">
+    <Card class="hidden lg:block h-min border-none">
       <CardHeader>
         <CardTitle>{(data as any)?.content?.dashboard?.manageAppointmentsTitle || "Manage Appointments"}</CardTitle>
         <CardDescription>{(data as any)?.content?.dashboard?.manageAppointmentsDescription || "Update or delete existing appointments for your clinic."}</CardDescription>

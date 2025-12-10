@@ -1,5 +1,5 @@
 import { redirect, fail, type ServerLoad, type Actions } from "@sveltejs/kit";
-import { getUserData, addAppointment, getDoctors, getDoctorById } from "$lib/server/userData";
+import { getUserData, addAppointment, getDoctors, getDoctorById, createNotification } from "$lib/server/userData";
 import { getDb } from "$lib/server/database";
 import { ObjectId } from "mongodb";
 
@@ -11,14 +11,15 @@ export const load: ServerLoad = async ({ locals }) => {
   let appointments: any[] = [];
   const clinicId = (await db.collection<any>("users").findOne({ _id: session.user.id }))?.clinic_id;
   if (clinicId) {
-    appointments = await db.collection<any>("appointments").find({ doctor_id: clinicId }).sort({ date: -1 }).toArray();
-    appointments.map((appt) => {
-      appt.user_name = "";
-      db.collection<any>("users").findOne({ _id: appt.user_id }).then((user) => {
-        if (user) appt.user_name = user.name;
-      });
-      return appt;
-    });
+    appointments = await db.collection<any>("appointments").find({ doctor_id: clinicId }).sort({ date: 1 }).toArray();
+    await Promise.all(
+      appointments.map(async (appt) => {
+        const user = await db.collection<any>("users").findOne({ _id: appt.user_id });
+        appt.user_name = user?.name || "";
+        appt.user_phone = user?.phone || "";
+        return appt;
+      })
+    );
   } else {
     const data = await getUserData(session.user.id);
     appointments = data.appointments;
@@ -161,6 +162,14 @@ export const actions: Actions = {
     if (dt < start || dt >= end) {
       return fail(400, { error: "Selected time is outside clinic open hours" });
     }
+
+    // Enforce one active appointment per clinic for this user
+    const db = await getDb();
+    const existing = await db.collection<any>("appointments").findOne({ user_id: session.user.id as any, doctor_id: doctor_id as any });
+    if (existing) {
+      return fail(400, { error: "You already have an appointment with this clinic" });
+    }
+
     await addAppointment(session.user.id, { doctor_id, date: slot, notes });
     return { success: true };
   },
@@ -185,6 +194,15 @@ export const actions: Actions = {
     }
     // Notes are not editable from the clinic dashboard per requirements
     await db.collection<any>("appointments").updateOne({ _id: appt._id }, { $set: update });
+
+    // Notify the user about the schedule change (structured, language-ready)
+    const newTime = update.date ? new Date(update.date) : new Date(appt.date);
+    await createNotification(String(appt.user_id), {
+      type: "reschedule",
+      appointmentId: String(appt._id),
+      appointmentDate: newTime,
+      doctorName: appt.doctor_name || appt.specialty || ""
+    });
     return { updated: true, id };
   },
   deleteAppointment: async ({ locals, request }) => {
@@ -199,6 +217,40 @@ export const actions: Actions = {
     const userDoc = await db.collection<any>("users").findOne({ _id: session.user.id });
     if (!userDoc?.clinic_id || String(appt.doctor_id) !== String(userDoc.clinic_id)) return fail(403, { error: "Not authorized to delete this appointment" });
     await db.collection<any>("appointments").deleteOne({ _id: appt._id });
+    // Notify the user about the deletion
+    await createNotification(String(appt.user_id), {
+      type: "deleted",
+      appointmentId: String(appt._id),
+      appointmentDate: new Date(appt.date),
+      doctorName: appt.doctor_name || appt.specialty || ""
+    });
+    return { deleted: true, id };
+  },
+  cancelAppointment: async ({ locals, request }) => {
+    const session = locals.session; if (!session) throw redirect(303, "/login");
+    if (session.user.clinic) return fail(403, { error: "Clinic accounts cannot cancel as patient" });
+    const form = await request.formData();
+    const id = String(form.get("id") || "");
+    if (!id) return fail(400, { error: "Missing appointment id" });
+    const db = await getDb();
+    const appt = await db.collection<any>("appointments").findOne({ _id: new ObjectId(id), user_id: session.user.id as any });
+    if (!appt) return fail(404, { error: "Appointment not found" });
+    await db.collection<any>("appointments").deleteOne({ _id: appt._id });
+
+    // Notify clinic users about the cancellation
+    const clinicUsers = await db.collection<any>("users").find({ clinic_id: String(appt.doctor_id) }).project({ _id: 1 }).toArray();
+    const patient = await db.collection<any>("users").findOne({ _id: session.user.id });
+    const patientName = patient?.name || patient?.full_name || patient?.email || "";
+    for (const receiver of clinicUsers) {
+      await createNotification(String(receiver._id), {
+        type: "deleted",
+        appointmentId: String(appt._id),
+        appointmentDate: new Date(appt.date),
+        doctorName: appt.doctor_name || appt.specialty || "",
+        patientName
+      });
+    }
+
     return { deleted: true, id };
   }
 };

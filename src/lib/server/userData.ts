@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 
 export async function getUserData(userId: string) {
   const db = await getDb();
-  const appointments = await db.collection<any>("appointments").find({ user_id: userId as any }).sort({ date: -1 }).toArray();
+  const appointments = await db.collection<any>("appointments").find({ user_id: userId as any }).sort({ date: 1 }).toArray();
   const contacts = await db.collection<any>("contacts").find({ user_id: userId as any }).sort({ last_contacted_at: -1 }).toArray();
   const savedDoctors = await db.collection<any>("saved_doctors").find({ user_id: userId as any }).toArray();
   return { appointments, contacts, savedDoctors };
@@ -35,6 +35,47 @@ export async function getDoctorById(id: string) {
 export async function getUserById(id: string) {
   const db = await getDb();
   return db.collection<any>("users").findOne({ _id: id as any });
+}
+
+export async function getNotifications(receiverId: string) {
+  const db = await getDb();
+  // Latest first for UI ordering
+  return db.collection<any>("notifications").find({ receiver_id: receiverId as any }).sort({ created_at: -1 }).toArray();
+}
+
+export async function consumeNotifications(ids: string[]) {
+  if (!ids.length) return;
+  const db = await getDb();
+  const objectIds = ids.map((id) => {
+    if (typeof id === "string" && /^[a-fA-F0-9]{24}$/.test(id)) {
+      try { return new ObjectId(id); } catch { return id as any; }
+    }
+    return id as any;
+  });
+  await db.collection<any>("notifications").deleteMany({ _id: { $in: objectIds } });
+}
+
+type NotificationType = "due" | "reschedule" | "deleted" | "new";
+
+export async function createNotification(receiverId: string, params: {
+  type: NotificationType;
+  appointmentId?: string;
+  appointmentDate?: Date | string;
+  doctorName?: string;
+  patientName?: string;
+}) {
+  const db = await getDb();
+  const doc: any = {
+    receiver_id: receiverId,
+    type: params.type,
+    appointment_id: params.appointmentId || null,
+    appointment_date: params.appointmentDate ? new Date(params.appointmentDate) : null,
+    doctor_name: params.doctorName || null,
+    patient_name: params.patientName || null,
+    created_at: new Date()
+  };
+  const res = await db.collection<any>("notifications").insertOne(doc);
+  return { _id: res.insertedId, ...doc };
 }
 
 export async function createClinic(clinic: { name: string; specialty: string; city: string; open_hours?: any[] }) {
@@ -103,7 +144,7 @@ export async function addAppointment(userId: string, appt: { doctor_id: string; 
   const doc = await db.collection<any>("doctors").findOne({ _id: queryId })
     || await db.collection<any>("doctors").findOne({ _id: String(appt.doctor_id) as any });
   if (!doc) throw new Error("Doctor not found");
-  await db.collection<any>("appointments").insertOne({
+  const res = await db.collection<any>("appointments").insertOne({
     user_id: userId,
     doctor_id: String(doc._id),
     doctor_name: doc.name,
@@ -112,6 +153,19 @@ export async function addAppointment(userId: string, appt: { doctor_id: string; 
     notes: appt.notes || "",
     created_at: new Date()
   });
+  const appointmentId = res.insertedId ? String(res.insertedId) : undefined;
+  const patient = await db.collection<any>("users").findOne({ _id: userId as any });
+  const clinicUsers = await db.collection<any>("users").find({ clinic_id: String(doc._id) }).project({ _id: 1 }).toArray();
+  const targets = clinicUsers.map((u: any) => String(u._id)).filter(Boolean);
+  for (const receiver of targets) {
+    await createNotification(receiver, {
+      type: "new",
+      appointmentId,
+      appointmentDate: new Date(appt.date),
+      doctorName: doc.name,
+      patientName: patient?.name || patient?.full_name || patient?.email || ""
+    });
+  }
 }
 
 export async function contactDoctor(userId: string, doctor: { id: string }) {

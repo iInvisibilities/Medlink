@@ -1,50 +1,5 @@
 <script>
-	import { onMount } from "svelte";
-	import { fade } from "svelte/transition";
 	let { data } = $props();
-	const fakeClinics = [
-		{
-			id: 1,
-			name: "Casablanca Care Clinic",
-			city: "Casablanca",
-			specialty: "Family Medicine",
-			tagline: "Same‑day appointments for busy families"
-		},
-		{
-			id: 2,
-			name: "Rabat Heart Center",
-			city: "Rabat",
-			specialty: "Cardiology",
-			tagline: "Heart check‑ups without the wait"
-		},
-		{
-			id: 3,
-			name: "Marrakech Wellness Clinic",
-			city: "Marrakech",
-			specialty: "General Practice",
-			tagline: "Full‑service clinic for you and your family"
-		},
-		{
-			id: 4,
-			name: "Agadir Skin Studio",
-			city: "Agadir",
-			specialty: "Dermatology",
-			tagline: "Modern skin care with flexible hours"
-		}
-	];
-
-	let visibleClinics = $state([...fakeClinics]);
-
-	onMount(() => {
-		const interval = setInterval(() => {
-			if (visibleClinics.length > 1) {
-				visibleClinics = visibleClinics.slice(1);
-			} else {
-				clearInterval(interval);
-			}
-		}, 4000);
-		return () => clearInterval(interval);
-	});
 </script>
 
 <section class="relative overflow-hidden">
@@ -75,7 +30,7 @@
 				</div>
 				<div class="flex items-end">
 					<button type="submit" class="inline-flex h-10 w-full items-center justify-center whitespace-nowrap rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring dark:bg-secondary dark:text-secondary-foreground">
-						{data?.content?.home?.searchButton || "Search doctors"}
+						{data?.content?.home?.searchButton || "Search clinics"}
 					</button>
 				</div>
 			</div>
