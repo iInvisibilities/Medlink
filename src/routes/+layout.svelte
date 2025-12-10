@@ -47,6 +47,7 @@
 				font-optical-sizing: auto;
 				font-weight: 500;
 				font-style: normal;
+				direction: rtl;
 			}
 		</style>
 	{/if}
@@ -62,6 +63,7 @@
 				<Button variant="outline" href="/admin">{data?.content?.nav?.adminDashboard || "Admin Dashboard"}</Button>
 			{/if}
 			<Button variant="outline" href="/dashboard">{data?.content?.nav?.dashboard || "Dashboard"}</Button>
+			<Button variant="outline" href="/account">{data?.content?.nav?.account || "Account"}</Button>
 			<form method="POST" action="/logout"><Button type="submit" variant="outline">{data?.content?.nav?.logout || "Logout"}</Button></form>
 		{:else}
 			<div class="flex items-center gap-4">

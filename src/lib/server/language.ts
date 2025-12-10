@@ -1,9 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import ar from '$lib/assets/lang/ar.txt?raw';
+import fr from '$lib/assets/lang/fr.txt?raw';
+import eng from '$lib/assets/lang/eng.txt?raw';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 type Language = 'en' | 'ar' | 'fr';
 
@@ -17,29 +15,29 @@ interface LanguageContent {
   [key: string]: Record<string, string> | undefined;
 }
 
-const languageMap: Record<string, string> = {
-  en: 'eng',
-  ar: 'ar',
-  fr: 'fr'
-};
-
 let cachedLanguages: Record<Language, LanguageContent> = {} as Record<Language, LanguageContent>;
 
-export function loadLanguages(): void {
-  const langDir = path.join(__dirname, '../assets/lang');
-  
-  (['en', 'ar', 'fr'] as Language[]).forEach((lang) => {
-    const filename = languageMap[lang];
-    const filePath = path.join(langDir, `${filename}.txt`);
-    
-    try {
-      const content = fs.readFileSync(filePath, 'utf-8');
-      cachedLanguages[lang] = JSON.parse(content);
-    } catch (error) {
-      console.error(`Failed to load language file for ${lang}:`, error);
-      cachedLanguages[lang] = { common: {} };
-    }
-  });
+export function loadLanguages(): void {  
+  try {
+    cachedLanguages['ar'] = JSON.parse(ar);
+  } catch (error) {
+    console.error(`Failed to load language file for ar:`, error);
+    cachedLanguages['ar'] = { common: {} };
+  }
+
+  try {
+    cachedLanguages['en'] = JSON.parse(eng);
+  } catch (error) {
+    console.error(`Failed to load language file for en:`, error);
+    cachedLanguages['en'] = { common: {} };
+  }
+
+  try {
+    cachedLanguages['fr'] = JSON.parse(fr);
+  } catch (error) {
+    console.error(`Failed to load language file for fr:`, error);
+    cachedLanguages['fr'] = { common: {} };
+  }
 }
 
 export function getLanguageContent(lang: string = 'en'): LanguageContent {

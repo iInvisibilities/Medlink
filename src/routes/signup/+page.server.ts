@@ -8,6 +8,7 @@ export const actions: Actions = {
     const form = await request.formData();
     const name = String(form.get("name") || "").trim();
     const email = String(form.get("email") || "").toLowerCase().trim();
+    const phone = String(form.get("phone") || "").trim();
     const password = String(form.get("password") || "");
     const confirm = String(form.get("confirm") || "");
     const invite_token = String(form.get("invite_token") || "").trim();
@@ -15,16 +16,17 @@ export const actions: Actions = {
     const errors: Record<string, string> = {};
     if (!name) errors.name = "Name is required";
     if (!email || !email.includes("@")) errors.email = "Valid email is required";
+    if (!phone) errors.phone = "Phone number is required";
     if (!password || password.length < 8) errors.password = "Password must be at least 8 characters";
     if (confirm !== password) errors.confirm = "Passwords do not match";
     if (Object.keys(errors).length) {
-      return fail(400, { errors, values: { name, email } });
+      return fail(400, { errors, values: { name, email, phone, invite_token } });
     }
 
     const users = await usersCollection();
     const existing = await users.findOne({ email });
     if (existing) {
-      return fail(409, { errors: { email: "Email already registered" }, values: { name, email } });
+      return fail(409, { errors: { email: "Email already registered" }, values: { name, email, phone, invite_token } });
     }
 
     const hasher = new Argon2id();
@@ -48,6 +50,7 @@ export const actions: Actions = {
       _id: userId,
       name,
       email,
+      phone,
       hashed_password: hashed,
       created_at: new Date(),
       clinic: clinicFlag,

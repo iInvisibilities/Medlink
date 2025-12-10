@@ -1,5 +1,50 @@
 <script>
+	import { onMount } from "svelte";
+	import { fade } from "svelte/transition";
 	let { data } = $props();
+	const fakeClinics = [
+		{
+			id: 1,
+			name: "Casablanca Care Clinic",
+			city: "Casablanca",
+			specialty: "Family Medicine",
+			tagline: "Same‑day appointments for busy families"
+		},
+		{
+			id: 2,
+			name: "Rabat Heart Center",
+			city: "Rabat",
+			specialty: "Cardiology",
+			tagline: "Heart check‑ups without the wait"
+		},
+		{
+			id: 3,
+			name: "Marrakech Wellness Clinic",
+			city: "Marrakech",
+			specialty: "General Practice",
+			tagline: "Full‑service clinic for you and your family"
+		},
+		{
+			id: 4,
+			name: "Agadir Skin Studio",
+			city: "Agadir",
+			specialty: "Dermatology",
+			tagline: "Modern skin care with flexible hours"
+		}
+	];
+
+	let visibleClinics = $state([...fakeClinics]);
+
+	onMount(() => {
+		const interval = setInterval(() => {
+			if (visibleClinics.length > 1) {
+				visibleClinics = visibleClinics.slice(1);
+			} else {
+				clearInterval(interval);
+			}
+		}, 4000);
+		return () => clearInterval(interval);
+	});
 </script>
 
 <section class="relative overflow-hidden">
@@ -36,83 +81,6 @@
 			</div>
 			<p class="mt-3 text-xs text-muted-foreground">{data?.content?.home?.searchTip || "Tip: Try \"Cardiologist\" in \"Casablanca\"."}</p>
 		</form>
-
-		<!-- Quick stats -->
-		<div class="mx-auto mt-10 grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-3">
-			<div class="rounded-lg border bg-card p-4 text-center">
-				<div class="text-2xl font-semibold">{data?.content?.home?.statsVerifiedCount || "500+"}</div>
-				<div class="text-sm text-muted-foreground">{data?.content?.home?.statsVerified || "Verified doctors"}</div>
-			</div>
-			<div class="rounded-lg border bg-card p-4 text-center">
-				<div class="text-2xl font-semibold">{data?.content?.home?.statsSpecialtiesCount || "50+"}</div>
-				<div class="text-sm text-muted-foreground">{data?.content?.home?.statsSpecialties || "Specialties"}</div>
-			</div>
-			<div class="rounded-lg border bg-card p-4 text-center">
-				<div class="text-2xl font-semibold">{data?.content?.home?.statsBookingCount || "24/7"}</div>
-				<div class="text-sm text-muted-foreground">{data?.content?.home?.statsBooking || "Online booking"}</div>
-			</div>
-		</div>
-	</div>
-</section>
-
-<!-- Featured Doctors -->
-<section class="mx-auto max-w-7xl px-6 py-12 sm:py-16">
-	<div class="mb-6 flex items-end justify-between">
-		<h2 class="text-2xl font-semibold">{data?.content?.homeExtra?.featuredTitle || "Featured doctors"}</h2>
-		<a href="/doctors" class="text-sm font-medium text-primary underline-offset-4 hover:underline">{data?.content?.homeExtra?.featuredBrowseAll || "Browse all"}</a>
-	</div>
-
-	<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-		<!-- Doctor Card 1 -->
-		<div class="rounded-xl border bg-card p-5 shadow-sm">
-			<div class="flex items-center gap-4">
-				<div class="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-sm font-semibold">AM</div>
-				<div>
-					<div class="font-medium">Dr. Amina Mansour</div>
-					<div class="text-xs text-muted-foreground">Cardiologist • 8 yrs exp.</div>
-				</div>
-			</div>
-			<div class="mt-4 flex flex-wrap items-center gap-2">
-				<span class="inline-flex items-center rounded-md border px-2 py-1 text-xs">Heart Health</span>
-				<span class="inline-flex items-center rounded-md border px-2 py-1 text-xs">Hypertension</span>
-			</div>
-			<div class="mt-4 text-sm text-muted-foreground">Downtown Clinic • Casablanca</div>
-			<div class="mt-3 flex items-center gap-2 text-sm"><span class="text-yellow-500">★★★★★</span><span class="text-muted-foreground">4.9 (120)</span></div>
-		</div>
-
-		<!-- Doctor Card 2 -->
-		<div class="rounded-xl border bg-card p-5 shadow-sm">
-			<div class="flex items-center gap-4">
-				<div class="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-sm font-semibold">YK</div>
-				<div>
-					<div class="font-medium">Dr. Yassine Karim</div>
-					<div class="text-xs text-muted-foreground">Dermatologist • 6 yrs exp.</div>
-				</div>
-			</div>
-			<div class="mt-4 flex flex-wrap items-center gap-2">
-				<span class="inline-flex items-center rounded-md border px-2 py-1 text-xs">Acne</span>
-				<span class="inline-flex items-center rounded-md border px-2 py-1 text-xs">Eczema</span>
-			</div>
-			<div class="mt-4 text-sm text-muted-foreground">SkinCare Center • Rabat</div>
-			<div class="mt-3 flex items-center gap-2 text-sm"><span class="text-yellow-500">★★★★☆</span><span class="text-muted-foreground">4.6 (98)</span></div>
-		</div>
-
-		<!-- Doctor Card 3 -->
-		<div class="rounded-xl border bg-card p-5 shadow-sm">
-			<div class="flex items-center gap-4">
-				<div class="flex h-12 w-12 items-center justify-center rounded-full bg-secondary text-sm font-semibold">SB</div>
-				<div>
-					<div class="font-medium">Dr. Salma Bensaid</div>
-					<div class="text-xs text-muted-foreground">Pediatrician • 10 yrs exp.</div>
-				</div>
-			</div>
-			<div class="mt-4 flex flex-wrap items-center gap-2">
-				<span class="inline-flex items-center rounded-md border px-2 py-1 text-xs">Child Care</span>
-				<span class="inline-flex items-center rounded-md border px-2 py-1 text-xs">Vaccination</span>
-			</div>
-			<div class="mt-4 text-sm text-muted-foreground">Family Clinic • Marrakech</div>
-			<div class="mt-3 flex items-center gap-2 text-sm"><span class="text-yellow-500">★★★★★</span><span class="text-muted-foreground">5.0 (75)</span></div>
-		</div>
 	</div>
 </section>
 
@@ -120,6 +88,9 @@
 <section class="bg-muted/40 py-12 sm:py-16">
 	<div class="mx-auto max-w-7xl px-6">
 		<h2 class="text-center text-2xl font-semibold">{data?.content?.homeExtra?.howTitle || "How Medlink works"}</h2>
+		<p class="mx-auto mt-3 max-w-2xl text-center text-sm text-muted-foreground">
+			{data?.content?.homeExtra?.howIntroBody || "Search, compare, and book appointments in just a few guided steps."}
+		</p>
 		<div class="mt-8 grid gap-6 sm:grid-cols-3">
 			<div class="rounded-xl border bg-card p-6">
 				<div class="text-sm font-medium">{data?.content?.homeExtra?.howStep1Title || "1. Search"}</div>
@@ -134,6 +105,9 @@
 				<p class="mt-2 text-sm text-muted-foreground">{data?.content?.homeExtra?.howStep3Body || "Pick a time that works and confirm instantly."}</p>
 			</div>
 		</div>
+		<p class="mt-8 text-center text-xs text-muted-foreground">
+			{data?.content?.homeExtra?.howExtraNote || "No phone calls or paperwork needed — everything stays inside Medlink."}
+		</p>
 	</div>
 	</section>
 
@@ -186,4 +160,3 @@
 		</div>
 	</div>
 </footer>
-

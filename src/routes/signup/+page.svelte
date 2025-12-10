@@ -32,6 +32,22 @@
             {/if}
           </div>
           <div class="space-y-2">
+            <Label for="phone">{data?.content?.signup?.phoneLabel || "Phone number"}</Label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              placeholder={data?.content?.signup?.phonePlaceholder || "Your phone number"}
+              class="h-10"
+              value={(form as any)?.values?.phone}
+              aria-invalid={Boolean((form as any)?.errors?.phone)}
+              aria-errormessage="phone-error"
+            />
+            {#if (form as any)?.errors?.phone}
+              <p id="phone-error" class="text-xs text-destructive">{(form as any).errors.phone}</p>
+            {/if}
+          </div>
+          <div class="space-y-2">
             <Label for="password">{data?.content?.signup?.passwordLabel || "Password"}</Label>
             <Input id="password" name="password" type="password" placeholder={data?.content?.signup?.passwordPlaceholder || "••••••••"} class="h-10" aria-invalid={Boolean((form as any)?.errors?.password)} aria-errormessage="password-error" />
             {#if (form as any)?.errors?.password}
