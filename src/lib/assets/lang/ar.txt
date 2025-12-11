@@ -11,7 +11,8 @@
     "loading": "جاري التحميل...",
     "error": "خطأ",
     "success": "نجاح",
-    "back": "العودة"
+    "back": "العودة",
+    "currencySymbol": "د.ت"
   },
   "home": {
     "title": "ابحث عن العيادة المناسبة. احجز موعداً عبر الإنترنت في دقائق.",
@@ -133,7 +134,22 @@
     "drawerCity": "المدينة",
     "drawerNoClinics": "لا توجد عيادات. جرّب عوامل تصفية مختلفة.",
     "drawerCancel": "إلغاء",
-    "drawerNext": "التالي"
+    "drawerNext": "التالي",
+    "billingTitle": "الفوترة",
+    "billingDescription": "تتبع الاستخدام المجاني والرسوم الشهرية لعيادتك.",
+    "billingFreeLabel": "الشريحة المجانية",
+    "billingFreeStatus": "{used}/{threshold} مستخدمة",
+    "billingFreeRemaining": "{remaining} متبقية مجاناً",
+    "billingRateLabel": "التسعير",
+    "billingRate": "{rate} {currency} لكل موعد بعد الشريحة المجانية",
+    "billingNotStarted": "لديك {remaining} مواعيد مجانية متبقية. تبدأ الفوترة بعد الوصول إلى {threshold}.",
+    "billingCurrentTitle": "الشهر الحالي",
+    "billingCurrentPeriod": "منذ {start}",
+    "billingCurrentCount": "المواعيد القابلة للفوترة: {count}",
+    "billingAmountDue": "الفاتورة التقديرية للشهر القادم: {amount} {currency}",
+    "billingStartedOn": "بدأت الفوترة في {date}",
+    "billingLifetimePaid": "المواعيد القابلة للفوترة إجمالاً: {count}",
+    "billingUnavailable": "بيانات الفوترة غير متاحة."
   },
   "homeExtra": {
     "featuredTitle": "عيادات مميزة",
@@ -147,6 +163,19 @@
     "howStep3Title": "3. احجز",
     "howStep3Body": "اختر الوقت المناسب وأكد الحجز فوراً.",
     "howExtraNote": "لا مكالمات هاتفية ولا أوراق مطبوعة — كل شيء يتم داخل Medlink.",
+    "pricing": {
+      "label": "التسعير",
+      "title": "بسيط يعتمد على الاستخدام وبدون مخاطر",
+      "intro": "أول 20 موعداً ناجحاً مجانية. بعد ذلك تدفع فقط عن كل موعد حضره المريض.",
+      "valueTitle": "قيمة عالية مقدماً",
+      "valueBody": "20 موعداً حضورياً أولى مجاناً لبدء الاستخدام بدون تكلفة إعداد.",
+      "capTitle": "سقف تكلفة واضح",
+      "capBody": "لا مفاجآت — تدفع فقط عندما يحضر المرضى.",
+      "revenueTitle": "إيراد مضمون",
+      "revenueBody": "الفوترة مرتبطة بالمواعيد التي حضرها المرضى، مما يحافظ على استدامة النموذج.",
+      "antiAbuseTitle": "لا إساءة استخدام طويلة",
+      "antiAbuseBody": "تنتهي الفئة المجانية عند 20 موعداً ناجحاً لمنع سوء الاستخدام مع بقاء العرض سخياً."
+    },
     "testimonialsTitle": "ماذا يقول المرضى",
     "testimonial1Quote": "\"كان الحجز عبر Medlink سهلاً للغاية — وجدت عيادة ممتازة وتجنبت طوابير الانتظار.\"",
     "testimonial1Author": "— سارة إ.",

@@ -2,6 +2,7 @@ import { redirect, fail, type Actions, type ServerLoad } from "@sveltejs/kit";
 import { getDb, usersCollection } from "$lib/server/database";
 import { Argon2id } from "oslo/password";
 import { createSession } from "$lib/server/session";
+import { BILLING_RATE } from "$lib/server/userData";
 
 export const load: ServerLoad = async ({ locals }) => {
   const session = locals.session;
@@ -100,6 +101,24 @@ export const actions: Actions = {
     }
 
     const db = await getDb();
+    const user = await db.collection<any>("users").findOne({ _id: session.user.id });
+    if (!user) throw redirect(303, "/login");
+
+    // Prevent deletion if there is unpaid billing for clinic accounts
+    if (user.clinic) {
+      const billing = user.billing || {};
+      const currentPeriodCount = billing.currentPeriodCount ?? 0;
+      const amountDue = currentPeriodCount * BILLING_RATE;
+      if (amountDue > 0) {
+        return fail(400, {
+          section: "delete",
+          errors: {
+            billing: `Cannot delete account: unpaid billing of ${amountDue} DT remains for the current period.`
+          }
+        });
+      }
+    }
+
     await db.collection<any>("users").deleteOne({ _id: session.user.id });
     await db.collection<any>("sessions").deleteMany({ user_id: session.user.id });
 

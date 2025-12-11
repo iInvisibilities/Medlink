@@ -13,6 +13,24 @@
   let selectedClinicId = $state<string>("");
   let selectedClinicName = $state<string>("");
   let appointments = $state<any[]>([]);
+  let billing = $state<any>(null);
+  let billingStale = $state(false);
+  let billingRefreshing = $state(false);
+  const currency = $derived((data as any)?.content?.common?.currencySymbol || "DT");
+
+  const formatDateLabel = (iso?: string | null) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : d.toLocaleDateString();
+  };
+
+  const formatBillingText = (template: string | undefined, map: Record<string, string>) => {
+    let out = template || "";
+    for (const [key, value] of Object.entries(map)) {
+      out = out.replace(`{${key}}`, value);
+    }
+    return out;
+  };
 
   $effect(() => { if ((form as any)?.results) drawerOpen = true; });
   $effect(() => {
@@ -23,6 +41,7 @@
   });
   $effect(() => {
     appointments = (data as any)?.appointments || [];
+    billing = (data as any)?.billing ?? null;
   });
 
   function onCloseDrawer() { drawerOpen = false; }
@@ -88,8 +107,8 @@
                     <div class="text-xs text-muted-foreground">{(data as any)?.content?.dashboard?.phoneLabel || "Phone"}: {appt.user_phone}</div>
                   {/if}
                   <div class="mb-2 text-xs text-muted-foreground">{(data as any)?.content?.dashboard?.notes || "Notes"}: {appt.notes || "—"}</div>
-                  <div class="flex flex-wrap items-center gap-2">
-                    <form method="POST" action="?/updateAppointment" class="flex items-center gap-2">
+                  <div class="flex items-center gap-2">
+                    <form method="POST" action="?/updateAppointment" class="flex items-center gap-2 flex-wrap">
                       <input type="hidden" name="id" value={appt._id} />
                       <div class="space-y-1">
                         <Input id={`date-${appt._id}`} name="date" type="datetime-local" class="h-9" value={formatDateForInput(appt.date)} />
@@ -209,15 +228,94 @@
       {/if}
     </Card>
     {:else}
-    <Card class="hidden lg:block h-min border-none">
-      <CardHeader>
-        <CardTitle>{(data as any)?.content?.dashboard?.manageAppointmentsTitle || "Manage Appointments"}</CardTitle>
-        <CardDescription>{(data as any)?.content?.dashboard?.manageAppointmentsDescription || "Update or delete existing appointments for your clinic."}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <p class="text-sm text-muted-foreground">{(data as any)?.content?.dashboard?.manageAppointmentsHelper || "Use the controls in the list to edit or remove appointments. Creating new appointments is disabled for clinic accounts."}</p>
-      </CardContent>
-    </Card>
+    <div class="space-y-4">
+      <Card class="border-none">
+        <CardHeader>
+          <CardTitle>{(data as any)?.content?.dashboard?.billingTitle || "Billing"}</CardTitle>
+          <CardDescription>{(data as any)?.content?.dashboard?.billingDescription || "Track free usage and monthly charges for your clinic."}</CardDescription>
+        </CardHeader>
+        <CardContent class="space-y-4">
+          {#if billing}
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="rounded-md border bg-card/50 p-3">
+                <div class="text-xs uppercase text-muted-foreground">{(data as any)?.content?.dashboard?.billingFreeLabel || "Free tier"}</div>
+                <div class="text-sm font-medium">
+                  {formatBillingText((data as any)?.content?.dashboard?.billingFreeStatus || "{used}/{threshold} used", {
+                    used: String(billing.freeUsed || 0),
+                    threshold: String(billing.freeThreshold || 50)
+                  })}
+                </div>
+                <div class="text-xs text-muted-foreground">
+                  {formatBillingText((data as any)?.content?.dashboard?.billingFreeRemaining || "{remaining} free left", {
+                    remaining: String(billing.freeRemaining ?? 0)
+                  })}
+                </div>
+              </div>
+              <div class="rounded-md border bg-card/50 p-3">
+                <div class="text-xs uppercase text-muted-foreground">{(data as any)?.content?.dashboard?.billingRateLabel || "Rate"}</div>
+                <div class="text-sm font-medium">
+                  {formatBillingText((data as any)?.content?.dashboard?.billingRate || "{rate} {currency} per appointment after free tier", {
+                    rate: String(billing.ratePerAppointment || 2),
+                    currency
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {#if billing.paidStartDate}
+              <div class="rounded-md border bg-card/50 p-3 space-y-1">
+                <div class="text-sm font-semibold">{(data as any)?.content?.dashboard?.billingCurrentTitle || "Current month"}</div>
+                <div class="text-xs text-muted-foreground">
+                  {formatBillingText((data as any)?.content?.dashboard?.billingCurrentPeriod || "Since {start}", {
+                    start: formatDateLabel(billing.currentPeriodStart)
+                  })}
+                </div>
+                <div class="text-sm">
+                  {formatBillingText((data as any)?.content?.dashboard?.billingCurrentCount || "Billable appointments: {count}", {
+                    count: String(billing.currentPeriodPaidAppointments || 0)
+                  })}
+                </div>
+                <div class="text-sm font-semibold">
+                  {formatBillingText((data as any)?.content?.dashboard?.billingAmountDue || "Estimated next invoice: {amount} {currency}", {
+                    amount: String(billing.currentPeriodAmountDue || 0),
+                    currency
+                  })}
+                </div>
+                <div class="text-xs text-muted-foreground">
+                  {formatBillingText((data as any)?.content?.dashboard?.billingStartedOn || "Billing started on {date}", {
+                    date: formatDateLabel(billing.paidStartDate)
+                  })}
+                </div>
+                <div class="text-xs text-muted-foreground">
+                  {formatBillingText((data as any)?.content?.dashboard?.billingLifetimePaid || "Lifetime billable appointments: {count}", {
+                    count: String(billing.lifetimePaidAppointments || 0)
+                  })}
+                </div>
+              </div>
+            {:else}
+              <p class="text-sm text-muted-foreground">
+                {formatBillingText((data as any)?.content?.dashboard?.billingNotStarted || "You have {remaining} free appointments left. Billing starts after you reach {threshold}.", {
+                  remaining: String(billing.freeRemaining ?? 0),
+                  threshold: String(billing.freeThreshold || 50)
+                })}
+              </p>
+            {/if}
+          {:else}
+            <p class="text-sm text-muted-foreground">{(data as any)?.content?.dashboard?.billingUnavailable || "Billing data unavailable."}</p>
+          {/if}
+        </CardContent>
+      </Card>
+
+      <Card class="hidden lg:block h-min border-none">
+        <CardHeader>
+          <CardTitle>{(data as any)?.content?.dashboard?.manageAppointmentsTitle || "Manage Appointments"}</CardTitle>
+          <CardDescription>{(data as any)?.content?.dashboard?.manageAppointmentsDescription || "Update or delete existing appointments for your clinic."}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p class="text-sm text-muted-foreground">{(data as any)?.content?.dashboard?.manageAppointmentsHelper || "Use the controls in the list to edit or remove appointments. Creating new appointments is disabled for clinic accounts."}</p>
+        </CardContent>
+      </Card>
+    </div>
     {/if}
   </div>
 </section>

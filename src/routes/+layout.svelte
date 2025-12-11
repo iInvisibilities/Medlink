@@ -1,7 +1,7 @@
 <script lang="ts">
 	import './layout.css';
 	import { browser } from '$app/environment';
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '$lib/assets/favicon.png';
 	import MedlinkIcon from '$lib/assets/Medlink.png';
 	import { ModeWatcher } from "mode-watcher";
 	import SunIcon from "@lucide/svelte/icons/sun";
@@ -129,7 +129,7 @@
 				seenNewNotificationIds.add(id);
 				if (!isOnDashboard) continue;
 				const apptId = n.appointment_id ? String(n.appointment_id) : undefined;
-				if (apptId && seenReloadAppointmentIds.has(apptId) && n?.type !== "deleted") continue;
+				if (apptId && seenReloadAppointmentIds.has(apptId)) continue;
 				void refreshDashboardAppointments(apptId);
 			}
 		}

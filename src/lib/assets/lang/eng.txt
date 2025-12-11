@@ -11,7 +11,8 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-    "back": "Back"
+    "back": "Back",
+    "currencySymbol": "DT"
   },
   "home": {
     "title": "Find the right clinic. Book online in minutes.",
@@ -133,7 +134,22 @@
     "drawerCity": "City",
     "drawerNoClinics": "No clinics found. Try different filters.",
     "drawerCancel": "Cancel",
-    "drawerNext": "Next"
+    "drawerNext": "Next",
+    "billingTitle": "Billing",
+    "billingDescription": "Track free usage and monthly charges for your clinic.",
+    "billingFreeLabel": "Free tier",
+    "billingFreeStatus": "{used}/{threshold} used",
+    "billingFreeRemaining": "{remaining} free left",
+    "billingRateLabel": "Rate",
+    "billingRate": "{rate} {currency} per appointment after free tier",
+    "billingNotStarted": "You have {remaining} free appointments left. Billing starts after you reach {threshold}.",
+    "billingCurrentTitle": "Current month",
+    "billingCurrentPeriod": "Since {start}",
+    "billingCurrentCount": "Billable appointments: {count}",
+    "billingAmountDue": "Estimated next invoice: {amount} {currency}",
+    "billingStartedOn": "Billing started on {date}",
+    "billingLifetimePaid": "Lifetime billable appointments: {count}",
+    "billingUnavailable": "Billing data unavailable."
   },
   "homeExtra": {
     "featuredTitle": "Featured clinics",
@@ -147,6 +163,19 @@
     "howStep3Title": "3. Book",
     "howStep3Body": "Pick a time that works and confirm instantly.",
     "howExtraNote": "No phone calls or paperwork needed — everything stays inside Medlink.",
+    "pricing": {
+      "label": "Pricing",
+      "title": "Simple, usage-based, risk-free",
+      "intro": "First 20 successful appointments are free. After that, pay only for each attended appointment.",
+      "valueTitle": "High value upfront",
+      "valueBody": "Free first 20 attended appointments speeds adoption with no setup cost.",
+      "capTitle": "Clear cost cap",
+      "capBody": "No surprises—pay only when patients show up.",
+      "revenueTitle": "Guaranteed revenue",
+      "revenueBody": "Billing ties to attended visits, keeping the model sustainable.",
+      "antiAbuseTitle": "No long-term freeloaders",
+      "antiAbuseBody": "Free tier ends at 20 successes, preventing abuse while staying generous."
+    },
     "testimonialsTitle": "What patients say",
     "testimonial1Quote": "\"Booking with Medlink was so easy—found a great clinic and avoided waiting lines.\"",
     "testimonial1Author": "— Sara E.",

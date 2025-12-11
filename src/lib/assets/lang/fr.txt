@@ -11,7 +11,8 @@
     "loading": "Chargement...",
     "error": "Erreur",
     "success": "Succès",
-    "back": "Retour"
+    "back": "Retour",
+    "currencySymbol": "DT"
   },
   "home": {
     "title": "Trouvez la bonne clinique. Réservez en ligne en quelques minutes.",
@@ -133,7 +134,22 @@
     "drawerCity": "Ville",
     "drawerNoClinics": "Aucune clinique trouvée. Essayez d'autres filtres.",
     "drawerCancel": "Annuler",
-    "drawerNext": "Suivant"
+    "drawerNext": "Suivant",
+    "billingTitle": "Facturation",
+    "billingDescription": "Suivez l'utilisation gratuite et les frais mensuels de votre clinique.",
+    "billingFreeLabel": "Palier gratuit",
+    "billingFreeStatus": "{used}/{threshold} utilisés",
+    "billingFreeRemaining": "{remaining} restants gratuits",
+    "billingRateLabel": "Tarif",
+    "billingRate": "{rate} {currency} par rendez-vous après le palier gratuit",
+    "billingNotStarted": "Il vous reste {remaining} rendez-vous gratuits. La facturation commence après {threshold} rendez-vous.",
+    "billingCurrentTitle": "Mois en cours",
+    "billingCurrentPeriod": "Depuis {start}",
+    "billingCurrentCount": "Rendez-vous facturables : {count}",
+    "billingAmountDue": "Facture estimée le mois prochain : {amount} {currency}",
+    "billingStartedOn": "Facturation commencée le {date}",
+    "billingLifetimePaid": "Rendez-vous facturables cumulés : {count}",
+    "billingUnavailable": "Données de facturation indisponibles."
   },
   "homeExtra": {
     "featuredTitle": "Cliniques à la une",
@@ -147,6 +163,19 @@
     "howStep3Title": "3. Réservez",
     "howStep3Body": "Choisissez un créneau qui vous convient et confirmez immédiatement.",
     "howExtraNote": "Plus d'appels ni de paperasse — tout se fait dans Medlink.",
+    "pricing": {
+      "label": "Tarifs",
+      "title": "Simple, à l’usage, sans risque",
+      "intro": "Les 20 premiers rendez-vous honorés sont gratuits. Ensuite, vous payez seulement pour chaque rendez-vous honoré.",
+      "valueTitle": "Valeur immédiate",
+      "valueBody": "Les 20 premiers rendez-vous honorés sont offerts pour favoriser l’adoption sans coût initial.",
+      "capTitle": "Plafond clair",
+      "capBody": "Pas de surprise — vous ne payez que lorsque les patients se présentent.",
+      "revenueTitle": "Revenus garantis",
+      "revenueBody": "La facturation est liée aux rendez-vous honorés, pour un modèle durable.",
+      "antiAbuseTitle": "Pas d’abus long terme",
+      "antiAbuseBody": "Le palier gratuit s’arrête à 20 succès, généreux mais protégé contre les abus."
+    },
     "testimonialsTitle": "Ce que disent les patients",
     "testimonial1Quote": "\"Prendre rendez-vous avec Medlink était très simple — j'ai trouvé une excellente clinique et évité les files d'attente.\"",
     "testimonial1Author": "— Sara E.",

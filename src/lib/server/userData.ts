@@ -1,6 +1,11 @@
 import { getDb } from "$lib/server/database";
 import { ObjectId } from "mongodb";
 
+export const BILLING_FREE_THRESHOLD = 50;
+export const BILLING_RATE = 2; // DT per appointment after free threshold
+
+const startOfUtcMonth = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+
 export async function getUserData(userId: string) {
   const db = await getDb();
   const appointments = await db.collection<any>("appointments").find({ user_id: userId as any }).sort({ date: 1 }).toArray();
@@ -165,6 +170,54 @@ export async function addAppointment(userId: string, appt: { doctor_id: string; 
       doctorName: doc.name,
       patientName: patient?.name || patient?.full_name || patient?.email || ""
     });
+  }
+
+  // Billing counters: increment lifetime used and billable monthly counts for the clinic users
+  if (clinicUsers.length) {
+    const now = new Date();
+    const monthStart = startOfUtcMonth(now);
+    const clinicUserDocs = await db.collection<any>("users").find({ clinic_id: String(doc._id) }).toArray();
+
+    for (const clinicUser of clinicUserDocs) {
+      const billing = clinicUser?.billing || {};
+      const usedBefore = billing.usedAppointments ?? 0;
+      const usedAfter = usedBefore + 1;
+      const paidBefore = Math.max(usedBefore - BILLING_FREE_THRESHOLD, 0);
+      const paidAfter = Math.max(usedAfter - BILLING_FREE_THRESHOLD, 0);
+      const paidIncrement = Math.max(paidAfter - paidBefore, 0);
+
+      let paidStartDate: Date | null = billing.paidStartDate ? new Date(billing.paidStartDate) : null;
+      if (!paidStartDate && paidAfter > 0) paidStartDate = now;
+
+      let currentPeriodStart: Date | null = billing.currentPeriodStart ? new Date(billing.currentPeriodStart) : null;
+      let currentPeriodCount: number = billing.currentPeriodCount ?? 0;
+
+      if (paidAfter > 0) {
+        const needsReset = !currentPeriodStart
+          || currentPeriodStart.getUTCFullYear() !== monthStart.getUTCFullYear()
+          || currentPeriodStart.getUTCMonth() !== monthStart.getUTCMonth();
+        if (needsReset) {
+          currentPeriodStart = monthStart;
+          currentPeriodCount = 0;
+        }
+        if (paidIncrement > 0) currentPeriodCount += paidIncrement;
+      } else {
+        currentPeriodStart = null;
+        currentPeriodCount = 0;
+      }
+
+      await db.collection<any>("users").updateOne(
+        { _id: clinicUser._id },
+        {
+          $set: {
+            "billing.usedAppointments": usedAfter,
+            "billing.paidStartDate": paidStartDate,
+            "billing.currentPeriodStart": currentPeriodStart,
+            "billing.currentPeriodCount": currentPeriodCount
+          }
+        }
+      );
+    }
   }
 }
 

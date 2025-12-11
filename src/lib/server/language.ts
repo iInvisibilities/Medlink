@@ -5,14 +5,43 @@ import eng from '$lib/assets/lang/eng.txt?raw';
 
 type Language = 'en' | 'ar' | 'fr';
 
+interface PricingContent {
+  label?: string;
+  title?: string;
+  intro?: string;
+  valueTitle?: string;
+  valueBody?: string;
+  capTitle?: string;
+  capBody?: string;
+  revenueTitle?: string;
+  revenueBody?: string;
+  antiAbuseTitle?: string;
+  antiAbuseBody?: string;
+}
+
+type HomeExtraEntry = string | PricingContent | undefined;
+
+interface HomeExtraContent {
+  pricing?: PricingContent;
+  footerCopyright?: string;
+  [key: string]: HomeExtraEntry;
+}
+
 interface LanguageContent {
   common: Record<string, string>;
   home?: Record<string, string>;
+  homeExtra?: HomeExtraContent;
+  search?: Record<string, string>;
   login?: Record<string, string>;
   signup?: Record<string, string>;
   dashboard?: Record<string, string>;
   validation?: Record<string, string>;
-  [key: string]: Record<string, string> | undefined;
+  nav?: Record<string, string>;
+  notifications?: Record<string, string>;
+  admin?: Record<string, string>;
+  reset?: Record<string, string>;
+  resetToken?: Record<string, string>;
+  account?: Record<string, string>;
 }
 
 let cachedLanguages: Record<Language, LanguageContent> = {} as Record<Language, LanguageContent>;

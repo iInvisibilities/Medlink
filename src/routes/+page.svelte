@@ -66,6 +66,59 @@
 	</div>
 	</section>
 
+	<!-- Pricing -->
+	<section class="mx-auto max-w-7xl px-6 py-12 sm:py-16">
+		<div class="rounded-2xl border bg-card p-6 shadow-sm sm:p-10">
+			<div class="grid gap-6 md:grid-cols-3 md:items-start">
+				<div class="md:col-span-1 space-y-2">
+					<p class="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+						{data?.content?.homeExtra?.pricing?.label || "Pricing"}
+					</p>
+					<h2 class="text-2xl font-semibold leading-tight">
+						{data?.content?.homeExtra?.pricing?.title || "Simple, usage-based, risk-free"}
+					</h2>
+					<p class="text-sm text-muted-foreground">
+						{data?.content?.homeExtra?.pricing?.intro || "First 20 successful appointments are free. After that, pay only for each attended appointment."}
+					</p>
+				</div>
+				<div class="md:col-span-2 grid gap-4 sm:grid-cols-2">
+					<div class="rounded-xl border bg-background p-4">
+						<h3 class="text-sm font-semibold">
+							{data?.content?.homeExtra?.pricing?.valueTitle || "High value upfront"}
+						</h3>
+						<p class="mt-2 text-sm text-muted-foreground">
+							{data?.content?.homeExtra?.pricing?.valueBody || "Free first 20 attended appointments speeds adoption with no setup cost."}
+						</p>
+					</div>
+					<div class="rounded-xl border bg-background p-4">
+						<h3 class="text-sm font-semibold">
+							{data?.content?.homeExtra?.pricing?.capTitle || "Clear cost cap"}
+						</h3>
+						<p class="mt-2 text-sm text-muted-foreground">
+							{data?.content?.homeExtra?.pricing?.capBody || "No surprises—pay only when patients show up."}
+						</p>
+					</div>
+					<div class="rounded-xl border bg-background p-4">
+						<h3 class="text-sm font-semibold">
+							{data?.content?.homeExtra?.pricing?.revenueTitle || "Guaranteed revenue"}
+						</h3>
+						<p class="mt-2 text-sm text-muted-foreground">
+							{data?.content?.homeExtra?.pricing?.revenueBody || "Billing ties to attended visits, keeping the model sustainable."}
+						</p>
+					</div>
+					<div class="rounded-xl border bg-background p-4">
+						<h3 class="text-sm font-semibold">
+							{data?.content?.homeExtra?.pricing?.antiAbuseTitle || "No long-term freeloaders"}
+						</h3>
+						<p class="mt-2 text-sm text-muted-foreground">
+							{data?.content?.homeExtra?.pricing?.antiAbuseBody || "Free tier ends at 20 successes, preventing abuse while staying generous."}
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
 <!-- Testimonials -->
 <section class="mx-auto max-w-7xl px-6 py-12 sm:py-16">
 	<h2 class="mb-6 text-2xl font-semibold">{data?.content?.homeExtra?.testimonialsTitle || "What patients say"}</h2>
@@ -103,15 +156,8 @@
 		</div>
 	</div>
 </section>
-
-<!-- Footer -->
 <footer class="border-t">
 	<div class="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-8 text-sm text-muted-foreground">
 		<div>{(data?.content?.homeExtra?.footerCopyright || `© {year} Medlink. All rights reserved.`).replace('{year}', String(new Date().getFullYear()))}</div>
-		<div class="flex items-center gap-4">
-			<a href="/privacy" class="hover:underline">{data?.content?.homeExtra?.footerPrivacy || "Privacy"}</a>
-			<a href="/terms" class="hover:underline">{data?.content?.homeExtra?.footerTerms || "Terms"}</a>
-			<a href="/contact" class="hover:underline">{data?.content?.homeExtra?.footerContact || "Contact"}</a>
-		</div>
 	</div>
 </footer>

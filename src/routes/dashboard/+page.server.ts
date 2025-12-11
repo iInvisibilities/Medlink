@@ -1,15 +1,95 @@
 import { redirect, fail, type ServerLoad, type Actions } from "@sveltejs/kit";
-import { getUserData, addAppointment, getDoctors, getDoctorById, createNotification } from "$lib/server/userData";
+import { getUserData, addAppointment, getDoctors, getDoctorById, createNotification, BILLING_FREE_THRESHOLD, BILLING_RATE } from "$lib/server/userData";
 import { getDb } from "$lib/server/database";
 import { ObjectId } from "mongodb";
+
+const startOfUtcMonth = (d: Date) => new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
+
+const deepSerialize = (value: any): any => {
+  if (value == null) return value;
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === 'object') {
+    if (typeof (value as any).toHexString === 'function') return (value as any).toHexString();
+    if (typeof (value as any).toString === 'function' && (value.constructor?.name === 'ObjectId')) {
+      return (value as any).toString();
+    }
+    if (Array.isArray(value)) return value.map(deepSerialize);
+    const out: any = {};
+    for (const [k, v] of Object.entries(value)) out[k] = deepSerialize(v);
+    return out;
+  }
+  return value;
+};
+
+const computeBilling = (userDoc: any) => {
+  if (!userDoc?.clinic_id) return null;
+
+  const billingState = userDoc?.billing || {};
+  const usedAppointments = billingState.usedAppointments ?? 0;
+  const freeThreshold = BILLING_FREE_THRESHOLD;
+  const ratePerAppointment = BILLING_RATE;
+
+  const now = new Date();
+  const monthStart = startOfUtcMonth(now);
+
+  const freeUsed = Math.min(usedAppointments, freeThreshold);
+  const freeRemaining = Math.max(freeThreshold - usedAppointments, 0);
+
+  let paidStartDate: Date | null = billingState.paidStartDate ? new Date(billingState.paidStartDate) : null;
+  const hasPaid = usedAppointments > freeThreshold;
+  if (!paidStartDate && hasPaid) paidStartDate = now;
+
+  let currentPeriodStart: Date | null = billingState.currentPeriodStart ? new Date(billingState.currentPeriodStart) : null;
+  let currentPeriodPaidAppointments: number = billingState.currentPeriodCount ?? 0;
+  let needsBillingPersist = false;
+
+  if (paidStartDate) {
+    const mismatch = !currentPeriodStart
+      || currentPeriodStart.getUTCFullYear() !== monthStart.getUTCFullYear()
+      || currentPeriodStart.getUTCMonth() !== monthStart.getUTCMonth();
+    if (mismatch) {
+      currentPeriodStart = monthStart;
+      currentPeriodPaidAppointments = 0;
+      needsBillingPersist = true;
+    }
+  } else {
+    currentPeriodStart = null;
+    currentPeriodPaidAppointments = 0;
+  }
+
+  const currentPeriodAmountDue = paidStartDate ? currentPeriodPaidAppointments * ratePerAppointment : 0;
+  const lifetimePaidAppointments = Math.max(usedAppointments - freeThreshold, 0);
+
+  return {
+    data: {
+      freeThreshold,
+      ratePerAppointment,
+      totalAppointments: usedAppointments,
+      freeUsed,
+      freeRemaining,
+      paidStartDate: paidStartDate ? paidStartDate.toISOString() : null,
+      currentPeriodStart: currentPeriodStart ? currentPeriodStart.toISOString() : null,
+      currentPeriodPaidAppointments,
+      currentPeriodAmountDue,
+      lifetimePaidAppointments
+    },
+    needsBillingPersist,
+    persist: {
+      currentPeriodStart,
+      currentPeriodPaidAppointments,
+      paidStartDate
+    }
+  };
+};
 
 export const load: ServerLoad = async ({ locals }) => {
   const session = locals.session;
   if (!session) throw redirect(303, "/login");
   const db = await getDb();
+  const userDoc = await db.collection<any>("users").findOne({ _id: session.user.id });
   // Branch: clinic vs non-clinic
   let appointments: any[] = [];
-  const clinicId = (await db.collection<any>("users").findOne({ _id: session.user.id }))?.clinic_id;
+  const clinicId = userDoc?.clinic_id;
   if (clinicId) {
     appointments = await db.collection<any>("appointments").find({ doctor_id: clinicId }).sort({ date: 1 }).toArray();
     await Promise.all(
@@ -25,25 +105,31 @@ export const load: ServerLoad = async ({ locals }) => {
     appointments = data.appointments;
   }
   const doctors = await getDoctors();
-  const deepSerialize = (value: any): any => {
-    if (value == null) return value;
-    if (value instanceof Date) return value.toISOString();
-    if (typeof value === 'object') {
-      // ObjectId or similar: use string representation
-      if (typeof (value as any).toHexString === 'function') return (value as any).toHexString();
-      if (typeof (value as any).toString === 'function' && (value.constructor?.name === 'ObjectId')) {
-        return (value as any).toString();
+
+  // Billing metrics (clinic accounts only)
+  let billing: any = null;
+  if (clinicId) {
+    const billingResult = computeBilling(userDoc);
+    if (billingResult) {
+      billing = billingResult.data;
+      if (billingResult.needsBillingPersist) {
+        await db.collection<any>("users").updateOne(
+          { _id: session.user.id },
+          {
+            $set: {
+              "billing.currentPeriodStart": billingResult.persist.currentPeriodStart,
+              "billing.currentPeriodCount": billingResult.persist.currentPeriodPaidAppointments,
+              "billing.paidStartDate": billingResult.persist.paidStartDate
+            }
+          }
+        );
       }
-      if (Array.isArray(value)) return value.map(deepSerialize);
-      const out: any = {};
-      for (const [k, v] of Object.entries(value)) out[k] = deepSerialize(v);
-      return out;
     }
-    return value;
-  };
+  }
   const serializeDoctors = deepSerialize(doctors);
   const serializeAppointments = deepSerialize(appointments);
-  return { user: session.user, appointments: serializeAppointments, doctors: serializeDoctors };
+  const serializeBilling = deepSerialize(billing);
+  return { user: session.user, appointments: serializeAppointments, doctors: serializeDoctors, billing: serializeBilling };
 };
 
 export const actions: Actions = {
@@ -88,21 +174,6 @@ export const actions: Actions = {
       return fail(400, { error: "Please enter at least one filter (name, specialty, or location) before searching." });
     }
     const results = await getDoctors({ q: q || undefined, specialty: specialty || undefined, city: location || undefined }, 50);
-    const deepSerialize = (value: any): any => {
-      if (value == null) return value;
-      if (value instanceof Date) return value.toISOString();
-      if (typeof value === 'object') {
-        if (typeof (value as any).toHexString === 'function') return (value as any).toHexString();
-        if (typeof (value as any).toString === 'function' && (value.constructor?.name === 'ObjectId')) {
-          return (value as any).toString();
-        }
-        if (Array.isArray(value)) return value.map(deepSerialize);
-        const out: any = {};
-        for (const [k, v] of Object.entries(value)) out[k] = deepSerialize(v);
-        return out;
-      }
-      return value;
-    };
     return { results: deepSerialize(results) };
   },
   findSlots: async ({ locals, request }) => {
